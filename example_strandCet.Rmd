@@ -12,17 +12,12 @@ output:
 
 ## Example
 
-Below can be found the commands used to run the example of the paper.
-Note that model fits and estimated parameters could vary slightly from one run to another. 
-General stepwise instructions for the different functions and their options, 
-as well as other examples can be found in the *strandCet* manual
-<https://cran.r-project.org/web/packages/strandCet/strandCet.pdf>, 
-For further package details you can also consult the help files -> help("strandCet").
+##### In this document can be found the code used to run the examples of the paper titled "*strandCet*: R package for estimating natural and anthropogenic mortality-at-age of cetaceans from age-structured strandings". It should be noted that model fits and estimated parameters could vary slightly from one run to another. General stepwise instructions for the different functions and their options, as well as other examples can be found in the *strandCet* manual <https://cran.r-project.org/web/packages/strandCet/strandCet.pdf>. For further details see the package help files > help(package = "strandCet").
 
 
-#### Load necesary packages
+#### Load necesary packages.
 
-##### Note that these packages must be previously installed
+##### Note that these packages must be previously installed.
 
 ```{r}
 library(strandCet)
@@ -30,139 +25,243 @@ library(ggplot2)
 ```
 
 
-### Data mining
-
-##### From Stolen and Barlow (2003) 
-
-####  Numbers of dead/stranded dolphins
+###  Original data.
+##### From Stolen and Barlow (2003).
 ```{r}
 N <- c(36,14,32,15,13,8,4,5,3,3,2,3,3,6,3,8,5,5,8,3,11,4,1,4,3,3,6,2,1,2,0,1,0,1,0,2)
-```
-
-####  Age range of the dead/stranded dolphins 
-```{r}
 age <- 0:35
-```
-
-####  Normally distributed bycaught dolphins with mode before maturity
-
-```{r}
-set.seed(123)
-Nbyc <- N + c(sort(round(rnorm(6, mean = 10, sd = 5))),
-            rev(sort(round(rnorm(6, mean = 10, sd = 5)))), rep(0,24))
-```
-
-####  Original data from Stolen and Barlow (2003) 
-```{r}
 data.A <- data.frame(age, N) 
 ```
 
-#### Theoretical bycaught dolphins added 
+####   Life table from observed data (original data without bycatch).
 ```{r}
-data.B <- data.frame(age, Nbyc) 
+life.A <- life.tab(data.A)
+```
+**Table 1: Life table performed using the original data without bycach.** Age at the beginning of the interval (age). Number of observed deaths at age x (Mx). Number of survivors at age x (Sx). Number of survivors at age x in a theoretical cohort starting with n individuals (nx). Number of deaths at age x in a theoretical cohort starting with n individuals (dx). Probability of death between ages x and x + n (qx). Probability of survival to exact age x (lx). Life expectancy at age x (ex). Instant death rate at age x (Zx).
+```{r, echo=FALSE}
+print(life.A, row.names = FALSE)
+```
+
+
+### Data with the first age class underrepresented.
+
+##### Stolen and Barlow (2003) considered that the number of stranded cetaceans are not negatively biased in the first age classes.
+
+##### Only one third of the strandings of calves (first age class) were considered in this dataset to simulate a scenario with underrepresentation of calves.
+```{r}
+Nyoung <- c(N[c(1)]/3, N[-c(1)])
+data.B <- data.frame(age, Nyoung) 
+```
+
+####   Life table from observed data (data with the first age class underrepresented).
+```{r}
+life.B <- life.tab(data.B)
+```
+**Table 2: Life table performed using the data with the first age class underrepresented.** Age at the beginning of the interval (age). Number of observed deaths at age x (Mx). Number of survivors at age x (Sx). Number of survivors at age x in a theoretical cohort starting with n individuals (nx). Number of deaths at age x in a theoretical cohort starting with n individuals (dx). Probability of death between ages x and x + n (qx). Probability of survival to exact age x (lx). Life expectancy at age x (ex). Instant death rate at age x (Zx).
+```{r, echo=FALSE}
+print(life.B, row.names = FALSE)
+```
+
+### Data with theoretical bycaught dolphins added. 
+
+##### Stolen and Barlow (2003) considered that the stranded cetaceans belonged to a population not affected by direct anthropogenic mortality.
+
+##### Bycaught dolphins were added following a gaussian distribution to simulate a population affected by incidental catch
+```{r}
+set.seed(123)
+Nbyc <- N + c(sort(round(rnorm(6, mean = 10, sd = 5))),
+              rev(sort(round(rnorm(6, mean = 10, sd = 5)))), rep(0,24))
+data.C <- data.frame(age, Nbyc)
+```
+
+####   Life table from observed data (data with theoretical bycaught dolphins).
+```{r}
+life.C <- life.tab(data.C)
+```
+**Table 3: Life table performed using the data with theoretical bycaught dolphins.** Age at the beginning of the interval (age). Number of observed deaths at age x (Mx). Number of survivors at age x (Sx). Number of survivors at age x in a theoretical cohort starting with n individuals (nx). Number of deaths at age x in a theoretical cohort starting with n individuals (dx). Probability of death between ages x and x + n (qx). Probability of survival to exact age x (lx). Life expectancy at age x (ex). Instant death rate at age x (Zx).
+```{r, echo=FALSE}
+print(life.C, row.names = FALSE)
 ```
 
 
 
-### Siler Model (with the original data - no bycatch)
+### Siler Model (original data without bycatch).
 
-####   Observed life table
-```{r}
-lifeSI <- life.tab(data.A)
-```
+##### In the simplest scenario, there are no negative biases in the number of stranded animals of the first age classes and we are interested in calculating only the total mortality (since it is considered that the population is not affected by major anthropogenic pressures).
 
-####  Siler model with the original data
+####  Siler model (original data without bycatch).
 ```{r, warning=FALSE}
 modSI <-  Si.mod(data.A)
 ```
 
-####  Predict the Siler model with the original data
+####  Predict the Siler model (original data without bycatch).
 ```{r}
 predSI <- Si.pred(data.A, modSI)
 ```
 
-####  Life table of the Siler model with the original data
+####  Life table of the Siler model (original data without bycatch).
 ```{r}
 life.Siler <- Est.life.tab(Est.qx = predSI$qx.tot, age = 0:35, n = 1000)
 ```
-
-
-
-### Heligman-Pollard Model (Data with bycatch)
-
-####   Observed life table
-```{r}
-lifeHP <- life.tab(data.B)
+**Table 4: Life table of the original data without bycach modelled using the Siler model.** Age at the beginning of the interval (Age). Probability of death between ages x and x + n (qx). Number of survivors at age x in a theoretical cohort starting with n individuals (nx). Number of deaths at age x in a theoretical cohort starting with n individuals (dx). Probability of survival to exact age x (lx). Life expectancy at age x (ex).Instant death rate at age x (Zx).
+```{r, echo=FALSE}
+print(life.Siler, row.names = FALSE)
 ```
 
-####   Select non-informative priors for the Heligman-Pollard model
+####  Siler plot (original data without bycatch).
+```{r}
+Sicurves <- ggplot(predSI, aes(age, qx.tot)) +
+  geom_line(colour = "red", lty = 1, size = 0.5) +
+  geom_point(data = life.A, aes(age, qx), shape = 1, colour = "grey50") +
+  ylim(0, 0.5) +
+  ylab(expression("Mortality (q" [x]* ")")) + xlab("Age") +
+  ggtitle("") +
+  theme(panel.background =  element_rect(fill = NA, colour = "black", size = 0.5), 
+        legend.title = element_blank(), legend.position = "none")
+```
+
+```{r, echo=FALSE, warning=FALSE, fig.cap = "**Fig. 1: Mortality-at-age estimated fitting the Siler model to the original data without bycatch**. Observed mortality rates (circles) and total mortality-at-age modelled with the Siler model (red line)."}
+print(Sicurves)
+```
+
+
+### Siler Model (data with the first age class underrepresented).
+
+##### The first age classes are usually underrepresented in strandings. One option is to remove the ages considered negatively biased fitting the model to the remaining ages. If this bias/underrepresentation is ignored, we can get wrong fits, even with lower mortality rates in the first age classes than in the juvenile ages.
+
+####  Siler model (data with the first age class underrepresented).
+```{r, warning=FALSE}
+modSI.R <-  Si.mod(data.B, rm = 1)
+modSI <-  Si.mod(data.B)
+```
+
+####  Predict the Siler model (data with the first age class underrepresented).
+```{r}
+predSI.R <- Si.pred(data.B, modSI.R, rm = 1)
+predSI <- Si.pred(data.B, modSI)
+```
+
+####  Life table of the Siler model (data with the first age class underrepresented).
+```{r}
+life.Siler <- Est.life.tab(Est.qx = predSI.R$qx.tot, age = 0:35, n = 1000)
+```
+**Table 5: Life table of the data with the first age class underrepresented modelled using the Siler model.** Age at the beginning of the interval (Age). Probability of death between ages x and x + n (qx). Number of survivors at age x in a theoretical cohort starting with n individuals (nx). Number of deaths at age x in a theoretical cohort starting with n individuals (dx). Probability of survival to exact age x (lx). Life expectancy at age x (ex).Instant death rate at age x (Zx).
+```{r, echo=FALSE}
+print(life.Siler, row.names = FALSE)
+```
+
+####  Siler plot (data with the first age class underrepresented).
+```{r}
+Sicurves <- ggplot(predSI.R, aes(age, qx.tot)) +
+  geom_line(colour = "red", lty = 1, size = 0.5) +
+  geom_line(data = predSI, colour = "black", lty = 2, size = 0.5) +
+  geom_point(data = life.B, aes(age, qx), shape = 1, colour = "grey50") +
+  geom_point(data = life.B[c(1),], aes(age, qx), shape = 16, colour="grey50") +
+  ylim(0, 0.5) +
+  ylab(expression("Mortality (q" [x]* ")")) + xlab("Age") +
+  ggtitle("") +
+  theme(panel.background =  element_rect(fill = NA, colour = "black", size = 0.5), 
+        legend.title = element_blank(), legend.position = "none")
+```
+
+```{r, echo=FALSE, warning=FALSE, fig.cap = "**Fig. 2: Mortality-at-age estimated fitting the Siler model to the data with the first age class underrepresented**. Observed mortality rates used (circles) and not used (dot) for fitting the  model. Total mortality-at-age modelled removing the first age class (red line) and mortality-at-age modelled using all ages (dashed line)."}
+print(Sicurves)
+```
+
+
+
+### Heligman-Pollard Model (data with theoretical bycaught dolphins).
+
+##### Mortality-at-age of a population affected by high levels of bycatch (which mainly affects young ages) should not be fitted with a Siler model. Mortality rates may not show a tipical U-shape, so the fit could not be adequate. In addition, it is only posible to calculate the total mortality. In these cases, the adapted Heligman-Pollard model is more appropriate.
+
+####  Siler model (data with theoretical bycaught dolphins).
+```{r, warning=FALSE}
+modSI <-  Si.mod(data.C)
+```
+
+####  Predict the Siler model (data with theoretical bycaught dolphins).
+```{r}
+predSI <- Si.pred(data.C, modSI)
+```
+
+
+####   Select non-informative priors for the Heligman-Pollard model (data with theoretical bycaught dolphins).
 ```{r}
 priors <- data.frame(priors.lo = c(0,0,0,0,0,0,1,0,1),
-                     priors.hi = c(1,5,1,0.01,0.5,10,15,0.01,1.5))
+                     priors.hi = c(1,10,1,0.01,0.5,10,15,0.01,1.5))
 ```
 
-####   Compile priors in the required format
+####   Compile priors in the required format (data with theoretical bycaught dolphins).
 ```{r}
 q0 <- HP.priors(pri.lo = priors$priors.lo,
                 pri.hi = priors$priors.hi,
                 theta.dim = 9)
 ```
 
-####   Run the Heligman-Pollard model
-```{r}
-modHP <- HP.mod(prior = q0, lifeTab = lifeHP,
-                 K = 10, d = 10, B = 50, CI = 90)
+####   Run the Heligman-Pollard model (data with theoretical bycaught dolphins).
+```{r, include=FALSE}
+modHP <- HP.mod(prior = q0, lifeTab = life.C,
+                 K = 10, d = 10, B = 500, CI = 90)
+```
+**Table 6: Heligman-Pollard parameters.** Parameters A, B and C represent the juvenile mortality. D, E, F and I represent the "accident hump". G and H represent the senescent mortality.  
+```{r, echo=FALSE}
+print(modHP$out, row.names = c("A", "B", "C", "I", "D", "E", "F", "G", "H"))
 ```
 
-# Predict the Heligman-Pollard model model
+####   Predict the Heligman-Pollard model (data with theoretical bycaught dolphins).
 ```{r}
-predHP <- HP.pred(life = lifeHP, HPout = modHP, age = age)
+predHP <- HP.pred(life = life.C, HPout = modHP, age = age)
+```
+**Table 7: Life table of the data with theoretical bycaught dolphins modelled using the adapted Heligman-Pollard model.** Age at the beginning of the interval (age). Number of observed deaths at age x (Mx). Total probability of death between ages x and x + n (qx.tot). Natural probability of death between ages x and x + n (qx.nat). Young probability of death between ages x and x + n (qx.young). Probability of death due to an externl risk between ages x and x + n (qx.risk). Adult or senescent probability of death between ages x and x + n (qx.adult).
+
+```{r, echo=FALSE}
+print(predHP, row.names = FALSE)
 ```
 
-####   Heligman-Pollard plot
+####   Heligman-Pollard plot (data with theoretical bycaught dolphins).
 ```{r}
 HPcurves <- ggplot(predHP, aes(age, qx.tot)) +
-    geom_line(colour = "black", lty=1, size = 0.5) +
+    geom_line(colour = "black", lty=1, size = 0.8) +
+    geom_line(data = predSI, colour = "black", lty=1, size = 0.5) +
     geom_line(aes(age, qx.young), colour = "green", lty = 4) +
     geom_line(aes(age, qx.risk), colour = "red", lty = 3, size = 0.5) +
     geom_line(aes(age, qx.adult), colour = "deepskyblue3", lty = 2) +
-    geom_point(data = lifeHP, aes(age, qx), shape=1, colour="grey50") +
-    ylim(0,0.5) +
+    geom_point(data = life.C, aes(age, qx), shape=1, colour="grey50") +
+    ylim(0,0.65) +
     ylab(expression("Mortality (q" [x]* ")")) + xlab("Age") +
     ggtitle("") +
     theme(panel.background =  element_rect(fill = NA, colour = "black", size = 0.5), 
           legend.title = element_blank(), legend.position = "none")
 ```
 
-```{r, warning=FALSE, fig.cap = "Fig. 1: Heligman-Pollard model"}
+```{r, echo=FALSE, warning=FALSE, fig.cap = "**Fig. 3: Mortality-at-age estimated fitting the adapted Heligman-Pollard model to the data with theoretical bycaught dolphins.** Observed mortality rates (circles). Total mortality-at-age modelled with the adapted Heligman-Pollard model (thick dark solid line) and with the Siler model (thin dark solid line). Juvenile modelled natural mortality-at-age (blue dashed line). Senescent modelled natural mortality-at-age (green dot-dashed line). Bycatch modelled mortality-at-age (red dotted line)."}
 print(HPcurves)
 ```
 
 
 
+###  Leslie Matrices (data with theoretical bycaught dolphins).
 
-###  Leslie Matrices
-
-#### Set maturity vector: Maturity at age 9 with pregnancy rate of 40% 
+#### Set a maturity vector: Maturity at age 7 (first parturition at age 8) with pregnancy rate of 40% (Wells et al. 1987). 
 ```{r}
-mat <- c(0,0,0,0,0,0,0,0,0, rep(1/2.5, 27))
+mat <- c(0,0,0,0,0,0,0,0, rep(0.4, 28))
 ```
 
-### Leslie Matrix with the Total mortality estimated with the Heligman-Pollard model
+### Leslie Matrix using the total mortality estimated with the Heligman-Pollard model.
 
-#### Get the median, low and high 90% credible intervals of the Total Heligman-Pollar mortality
+#### Get the median, low and high 90% credible intervals of the Total Heligman-Pollar mortality (using the total mortality).
 ```{r}
 TotalMs <- HP.CI(HPout = modHP, age = 0:35, CI = 90, M = "total")
 ```
 
-#### Contruct life tables for the median and credible intervals 
+#### Contruct life tables for the median and credible intervals (using the total mortality).
 ```{r}
 TotHP.life <- Est.life.tab(Est.qx = TotalMs$Med, age = 0:35, n = 1000)
 TotHP.life.L <- Est.life.tab(Est.qx = TotalMs$Mlo, age = 0:35, n = 1000)
 TotHP.life.H <- Est.life.tab(Est.qx = TotalMs$Mhi, age = 0:35, n = 1000)
 ```
 
-#### Contruct Leslie life tables for the median and credible intervals
+#### Contruct Leslie life tables for the median and credible intervals (using the total mortality).
 ```{r}
 Tot.life <- with(TotHP.life, life.Leslie(x = 0:35, nKx = nx, nDx = dx,
                                  type = "cohort", iwidth = 1,
@@ -175,7 +274,7 @@ Tot.lifeH <- with(TotHP.life.H, life.Leslie(x = 0:35, nKx = nx, nDx = dx,
                                    width12  =c(1,1)))
 ```
 
-#### Contruct Leslie matrices for the median and credible intervals
+#### Contruct Leslie matrices for the median and credible intervals (using the total mortality).
 ```{r}
 Tot.A <- Leslie.matrix(lx = Tot.life$nLx, mx = mat, infant.class = FALSE,
             one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
@@ -185,53 +284,53 @@ Tot.AH <- Leslie.matrix(lx = Tot.lifeH$nLx, mx = mat, infant.class = FALSE,
              one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
 ```
 
-#### Predict Leslie projections 
+#### Predict Leslie matrices (using the total mortality). 
 ```{r}
 N.tot <- Leslie.pred(A = Tot.A, no = TotHP.life$nx, tmax = 100, pop.sum = TRUE)
 NL.tot <- Leslie.pred(A = Tot.AL, no = TotHP.life.L$nx, tmax = 100, pop.sum = TRUE)
 NH.tot <- Leslie.pred(A = Tot.AH, no = TotHP.life.H$nx, tmax = 100, pop.sum = TRUE)
 ```
 
-#### Eigenvalues (medians and credible intervals)
+#### Eigenvalues (using the total mortality).
 
-##### Population growth
-```{r}
-Tot.Aea <- eigen.analysis(Tot.A)
-Tot.Aea$lambda1 # 0.9618473
-Tot.AeaL <- eigen.analysis(Tot.AL)
-Tot.AeaL$lambda1 # 0.9841386
-Tot.AeaH <- eigen.analysis(Tot.AH)
-Tot.AeaH$lambda1 # 0.9345727
+```{r, results=FALSE}
+Tot.Aea <- eigen.analysis(Tot.A); Tot.Aea$lambda1
+Tot.AeaL <- eigen.analysis(Tot.AL); Tot.AeaL$lambda1
+Tot.AeaH <- eigen.analysis(Tot.AH); Tot.AeaH$lambda1
 ```
+##### The median __population growth__ (with 90% credible intervals) using the total mortality (with bycatch) fitted with the Heligman-Pollard model is `r round(Tot.Aea$lambda1,2)` [`r round(Tot.AeaH$lambda1,2)`,`r round(Tot.AeaL$lambda1,2)`].
 
-##### Net production
-```{r}
-Tot.Aea$rho # 1.176908
-Tot.AeaL$rho # 1.166733
-Tot.AeaH$rho # 1.174052
+```{r, results=FALSE}
+Tot.Aea$rho
+Tot.AeaL$rho
+Tot.AeaH$rho
 ```
+##### The median __net production__ (with 90% credible intervals) using the total mortality (with bycatch) fitted with the Heligman-Pollard model is `r round(Tot.Aea$rho,2)` [`r round(Tot.AeaH$rho,2)`,`r round(Tot.AeaL$rho,2)`].
 
-##### Generation time
-gen.time(Tot.A, peryear = 1) # 16.44523
-gen.time(Tot.AL, peryear = 1) # 17.08953
-gen.time(Tot.AH, peryear = 1) # 15.997
+```{r, results=FALSE}
+gen.time(Tot.A, peryear = 1)
+gen.time(Tot.AL, peryear = 1)
+gen.time(Tot.AH, peryear = 1)
+```
+##### The median __generation time__ (with 90% credible intervals) using the total mortality (with bycatch) fitted with the Heligman-Pollard model is `r round(gen.time(Tot.A, peryear = 1),2)` [`r round(gen.time(Tot.AH, peryear = 1),2)`,`r round(gen.time(Tot.AL, peryear = 1),2)`].
 
 
-### Leslie Matrix with the Natural mortality estimated with the Heligman-Pollard model
 
-#### Get the median, low and high 90% credible intervals of the Natural Heligman-Pollar mortality
+### Leslie Matrix using the natural mortality estimated with the Heligman-Pollard model.
+
+#### Get the median, low and high 90% credible intervals of the Natural Heligman-Pollar mortality (using the natural mortality only).
 ```{r}
 NaturalMs <- HP.CI(HPout = modHP, age = 0:35, CI = 90, M = "natural")
 ```
 
-#### Contruct life tables for the median and credible intervals 
+#### Contruct life tables for the median and credible intervals (using the natural mortality only). 
 ```{r}
 NatHP.life <- Est.life.tab(Est.qx = NaturalMs$Med, age = 0:35, n = 1000)
 NatHP.life.L <- Est.life.tab(Est.qx = NaturalMs$Mlo, age = 0:35, n = 1000)
 NatHP.life.H <- Est.life.tab(Est.qx = NaturalMs$Mhi, age = 0:35, n = 1000)
 ```
 
-#### Contruct Leslie life tables for the median and credible intervals
+#### Contruct Leslie life tables for the median and credible intervals (using the natural mortality only).
 ```{r}
 Nat.life <- with(NatHP.life, life.Leslie(x = age, nKx = nx, nDx = dx,
                                     type = "cohort", iwidth = 1,
@@ -244,7 +343,7 @@ Nat.lifeH <- with(NatHP.life.H, life.Leslie(x = age, nKx = nx, nDx = dx,
                                       width12 = c(1,1)))
 ```
 
-#### Contruct Leslie matrices for the median and credible intervals
+#### Contruct Leslie matrices for the median and credible intervals (using the natural mortality only).
 ```{r}
 Nat.A <- Leslie.matrix(lx = Nat.life$nLx, mx = mat, infant.class = FALSE,
             one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
@@ -254,48 +353,41 @@ Nat.AH <- Leslie.matrix(lx = Nat.lifeH$nLx, mx = mat, infant.class = FALSE,
              one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
 ```
 
-#### Predict Leslie projections 
+#### Predict Leslie matrices (using the natural mortality only).
 ```{r}
 N.nat <- Leslie.pred(A = Nat.A, no = NatHP.life$nx, tmax = 100, pop.sum = TRUE)
 NL.nat <- Leslie.pred(A = Nat.AL, no = NatHP.life.L$nx, tmax = 100, pop.sum = TRUE)
 NH.nat <- Leslie.pred(A = Nat.AH, no = NatHP.life.H$nx, tmax = 100, pop.sum = TRUE)
 ```
 
-#### Eigenvalues (medians and credible intervals)
+#### Eigenvalues (using the natural mortality only).
 
-##### Population growth
-```{r}
-Nat.Aea <- eigen.analysis(Nat.A)
-Nat.Aea$lambda1 # 1.030855
-Nat.AeaL <- eigen.analysis(Nat.AL)
-Nat.AeaL$lambda1 # 1.044063
-Nat.AeaH <- eigen.analysis(Nat.AH)
-Nat.AeaH$lambda1 # 1.007133
+```{r, results=FALSE}
+Nat.Aea <- eigen.analysis(Nat.A); Nat.Aea$lambda1
+Nat.AeaL <- eigen.analysis(Nat.AL); Nat.AeaL$lambda1
+Nat.AeaH <- eigen.analysis(Nat.AH); Nat.AeaH$lambda1
 ```
+##### The median __population growth__ (with 90% credible intervals) using the natural mortality (without bycatch) fitted with the Heligman-Pollard model is `r round(Nat.Aea$lambda1,2)` [`r round(Nat.AeaH$lambda1,2)`,`r round(Nat.AeaL$lambda1,2)`].
 
-##### Net production
-```{r}
-Nat.Aea$rho # 1.224137
-Nat.AeaL$rho # 1.206632
-Nat.AeaH$rho # 1.219181
+```{r, results=FALSE}
+Nat.Aea$rho
+Nat.AeaL$rho
+Nat.AeaH$rho
 ```
+##### The median __net production__ (with 90% credible intervals) using the natural mortality (without bycatch) fitted with the Heligman-Pollard model is `r round(Nat.Aea$rho,2)` [`r round(Nat.AeaH$rho,2)`,`r round(Nat.AeaL$rho,2)`].
 
-##### Generation time
-```{r}
-gen.time(Nat.A, peryear=1) # 16.30796
-gen.time(Nat.AL, peryear=1) # 16.92918
-g <- gen.time(Nat.AH, peryear=1) # 15.91013
+```{r, results=FALSE}
+gen.time(Nat.A, peryear = 1)
+gen.time(Nat.AL, peryear = 1)
+gen.time(Nat.AH, peryear = 1)
 ```
+##### The median __generation time__ (with 90% credible intervals) using the natural mortality (without bycatch) fitted with the Heligman-Pollard model is `r round(gen.time(Nat.A, peryear = 1),2)` [`r round(gen.time(Nat.AH, peryear = 1),2)`,`r round(gen.time(Nat.AL, peryear = 1),2)`].
 
 
 
-The generation time is `r g`
+### Bibliography.
 
+##### Stolen M., Barlow J. 2003. A model life table for bottlenose dolphins (*Tursiops truncatus*) from the Indian River Lagoon System, Florida, USA. *Marine mammal science* 19:630–649. DOI: 10.1111/j.1748-7692.2003.tb01121.x.
 
-
-### Bibliography 
-
-Stolen M., Barlow J. 2003. A model life table for bottlenose dolphins (*Tursiops truncatus*) from the Indian River Lagoon System, Florida, USA. *Marine mammal science* 19:630–649. DOI: 10.1111/j.1748-7692.2003.tb01121.x.
-
-
+##### Wells, RS., Scott, MD., & Irvine, AB. (1987). *The social structure of free-ranging bottlenose dolphins*. In: HH. Genoways (Ed.), Current Mammalogy (pp. 247–305). New York: Plenum Press.
 
