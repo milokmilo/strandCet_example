@@ -175,10 +175,16 @@ HPcurves <- ggplot(predHP, aes(age, qx.tot)) +
   ggtitle("") +
   theme(panel.background =  element_rect(fill = NA, colour = "black", size = 0.5), 
         legend.title = element_blank(), legend.position = "none")
+#png("aHPmodel.png", height = 10, width = 20, units = 'cm', res = 900)
 print(HPcurves)
+#dev.off()
 
 
 #### Leslie Matrices (data with theoretical bycaught dolphins) ####
+
+# Three generation time was used for projections following IUCN recommendations.
+# Since the generation time of the bottlenose dolphins (*Tursiops truncatus*) used in this analysis 
+# is about 21 years (Taylor et al. 2007) 65 years were used as an approximation of three generations
 
 # Set a maturity vector:
 # Maturity at age 7 (first parturition at age 8) with pregnancy rate of 40% (Wells et al. 1987)
@@ -216,9 +222,9 @@ Tot.AH <- Leslie.matrix(lx = Tot.lifeH$nLx, mx = mat, infant.class = FALSE,
                         one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
  
 # Predict Leslie matrices (using the total mortality)
-N.tot <- Leslie.pred(A = Tot.A, no = TotHP.life$nx, tmax = 100, pop.sum = TRUE)
-NL.tot <- Leslie.pred(A = Tot.AL, no = TotHP.life.L$nx, tmax = 100, pop.sum = TRUE)
-NH.tot <- Leslie.pred(A = Tot.AH, no = TotHP.life.H$nx, tmax = 100, pop.sum = TRUE)
+N.tot <- Leslie.pred(A = Tot.A, no = TotHP.life$nx, tmax = 65, pop.sum = TRUE)
+NL.tot <- Leslie.pred(A = Tot.AL, no = TotHP.life.L$nx, tmax = 65, pop.sum = TRUE)
+NH.tot <- Leslie.pred(A = Tot.AH, no = TotHP.life.H$nx, tmax = 65, pop.sum = TRUE)
  
 # Population growth
 Tot.Aea <- eigen.analysis(Tot.A); Tot.Aea$lambda1
@@ -267,9 +273,9 @@ Nat.AH <- Leslie.matrix(lx = Nat.lifeH$nLx, mx = mat, infant.class = FALSE,
                         one.sex = TRUE, SRB = 1, L = FALSE, peryear = 1)
 
 # Predict Leslie matrices (using the natural mortality)
-N.nat <- Leslie.pred(A = Nat.A, no = NatHP.life$nx, tmax = 100, pop.sum = TRUE)
-NL.nat <- Leslie.pred(A = Nat.AL, no = NatHP.life.L$nx, tmax = 100, pop.sum = TRUE)
-NH.nat <- Leslie.pred(A = Nat.AH, no = NatHP.life.H$nx, tmax = 100, pop.sum = TRUE)
+N.nat <- Leslie.pred(A = Nat.A, no = NatHP.life$nx, tmax = 65, pop.sum = TRUE)
+NL.nat <- Leslie.pred(A = Nat.AL, no = NatHP.life.L$nx, tmax = 65, pop.sum = TRUE)
+NH.nat <- Leslie.pred(A = Nat.AH, no = NatHP.life.H$nx, tmax = 65, pop.sum = TRUE)
  
 # Population growth
 Nat.Aea <- eigen.analysis(Nat.A); Nat.Aea$lambda1
@@ -291,6 +297,9 @@ gen.time(Nat.AH, peryear = 1)
 
 # Stolen M., Barlow J. 2003. A model life table for bottlenose dolphins (*Tursiops truncatus*) 
 # from the Indian River Lagoon System, Florida, USA. *Marine mammal science* 19:630–649. 
+
+# Taylor, B.L., Chivers, S.J., Larese, J., Perrin, W.F., 2007. Generation length and percent 
+# mature estimates for IUCN assessments of cetaceans. NOAA Technical Memorandum SFSC.
 
 # Wells, RS., Scott, MD., & Irvine, AB. (1987). The social structure of free-ranging bottlenose 
 # dolphins. In: HH. Genoways (Ed.), Current Mammalogy (pp. 247–305). New York: Plenum Press.
